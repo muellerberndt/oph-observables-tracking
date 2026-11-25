@@ -123,7 +123,7 @@ function renderTally(data) {
     el('dt', {}, glyph(s), ` ${s.toLowerCase()}`), el('dd', { text: rules[s] || '' }),
   ]));
   $('n-observable').textContent = obs.length;
-  $('n-premise').textContent = prem.length;
+  $('n-premise').textContent = ROWS.filter((r) => r.kind === 'premise').length;
   $('tally').hidden = false;
   $('switch').hidden = false;
 }
