@@ -93,14 +93,14 @@ function bar(rows) {
 
 function renderTally(data) {
   const obs = ROWS.filter((r) => r.kind === 'observable');
-  const prem = ROWS.filter((r) => r.kind === 'premise');
+
   const c = counts(obs);
   const completion = obs.reduce((a, r) => a + score(r), 0) / (obs.length || 1);
   const stat = (v, small, l) => el('div', { class: 'stat' }, el('span', { class: 'v' }, v, small ? el('small', { text: small }) : null), el('span', { class: 'l', text: l }));
   $('stats').replaceChildren(
     stat(pct(completion), null, 'completion'),
     stat(String(c.Demonstrated), `/ ${obs.length}`, 'observables demonstrated'),
-    stat(String(counts(prem).Demonstrated), `/ ${prem.length}`, 'premises demonstrated'),
+    stat(String(c.Demonstrated + c.Conditional), `/ ${obs.length}`, 'demonstrated or derived'),
   );
   $('bar').replaceWith(bar(obs));
   $('legend').replaceChildren(...STATUSES.map((s) => {
