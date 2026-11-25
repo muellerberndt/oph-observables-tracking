@@ -98,7 +98,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 1px dash
 .body p { margin: 4px 0 0; }
 .body .what { color: var(--ink); }
 .body .why { color: var(--text); opacity: .85; }
-.refs { margin: 10px 0 0; display: grid; grid-template-columns: 8ch 1fr; gap: 2px 12px; font-size: .74rem; }
+.refs { margin: 10px 0 0; display: grid; grid-template-columns: 9ch 1fr; gap: 2px 12px; font-size: .74rem; }
 .refs dt { color: var(--dim); letter-spacing: .1em; }
 .refs dd { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 14px; }
 .refs a { color: var(--glow); border-bottom: 1px dotted var(--dim); word-break: break-all; }

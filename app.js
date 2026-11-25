@@ -150,7 +150,7 @@ function refs(r) {
   const add = (label, nodes) => { if (nodes.length) dl.append(el('dt', { text: label }), el('dd', {}, nodes)); };
   const waits = r.premises.map((p) => BY_ID.get(p)).filter(Boolean)
     .map((p) => el('a', { href: `#${p.id}`, title: p.status }, `${GLYPH[p.status]} ${p.name}`));
-  add('waits on', waits);
+  add('premises', waits);
   if (r.kind === 'premise') {
     add('needed by', (WAITING.get(r.id) || []).map((o) => el('a', { href: `#${o.id}`, title: o.status }, `${GLYPH[o.status]} ${o.name}`)));
   }
@@ -188,9 +188,9 @@ function renderList() {
   }
   $('list').replaceChildren(...[...groups].map(([cat, items]) => {
     const whole = ROWS.filter((r) => r.kind === state.kind && r.category === cat);
-    const done = whole.filter((r) => r.status === 'Demonstrated').length;
+    const share = whole.reduce((a, r) => a + score(r), 0) / (whole.length || 1);
     return el('section', { class: 'group' },
-      el('h2', {}, cat.toUpperCase(), el('span', { class: 'n', text: `${done}/${whole.length}` })),
+      el('h2', { title: `weighted completion of ${whole.length} rows` }, cat.toUpperCase(), el('span', { class: 'n', text: `${Math.round(100 * share)}%` })),
       items.map(item));
   }));
   $('empty').hidden = groups.size > 0;

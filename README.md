@@ -13,7 +13,7 @@ for the last commit that touched the ledger and reads the file at that commit (f
 ## Completion
 
 Each observable scores demonstrated 1, partial 1/4, open 0. A conditional observable scores 1/2 plus half
-the mean score of the premises it waits on. Completion is the mean over all observables. The page also lists
+the mean score of the premises it waits on. Completion is the mean over all observables; each category shows the same score over its rows. The page also lists
 the premises that hold up the most observables.
 
 ## Files
