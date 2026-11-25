@@ -27,6 +27,8 @@ function el(tag, attrs, ...children) {
 }
 const glyph = (s) => el('span', { class: `g ${s}`, 'aria-label': s, title: s, text: GLYPH[s] || '?' });
 const pct = (x) => `${(100 * x).toFixed(1)}%`;
+const WEIGHTING = 'Weighted completion: each observable scores demonstrated 1, partial 1/4, open 0. A conditional one scores 1/2 plus half the mean score of the premises it waits on (premises score on the same scale), so it rises as those premises are demonstrated. The figure is the mean score over the rows.';
+const tip = (text) => el('span', { class: 'tip', tabindex: '0', role: 'note', 'aria-label': text, 'data-tip': text, text: '?' });
 
 async function load() {
   // Local preview: ?data=<same-origin relative path>.
@@ -96,9 +98,9 @@ function renderTally(data) {
 
   const c = counts(obs);
   const completion = obs.reduce((a, r) => a + score(r), 0) / (obs.length || 1);
-  const stat = (v, small, l) => el('div', { class: 'stat' }, el('span', { class: 'v' }, v, small ? el('small', { text: small }) : null), el('span', { class: 'l', text: l }));
+  const stat = (v, small, l, help) => el('div', { class: 'stat' }, el('span', { class: 'v' }, v, small ? el('small', { text: small }) : null), el('span', { class: 'l' }, l, help ? tip(help) : null));
   $('stats').replaceChildren(
-    stat(pct(completion), null, 'completion'),
+    stat(pct(completion), null, 'completion', WEIGHTING),
     stat(String(c.Demonstrated), `/ ${obs.length}`, 'observables demonstrated'),
     stat(String(c.Demonstrated + c.Conditional), `/ ${obs.length}`, 'demonstrated or derived'),
   );
@@ -190,7 +192,7 @@ function renderList() {
     const whole = ROWS.filter((r) => r.kind === state.kind && r.category === cat);
     const share = whole.reduce((a, r) => a + score(r), 0) / (whole.length || 1);
     return el('section', { class: 'group' },
-      el('h2', { title: `weighted completion of ${whole.length} rows` }, cat.toUpperCase(), el('span', { class: 'n', text: `${Math.round(100 * share)}%` })),
+      el('h2', { title: `weighted completion of ${whole.length} rows` }, cat.toUpperCase(), el('span', { class: 'n', text: `${Math.round(100 * share)}%` }), tip(WEIGHTING)),
       items.map(item));
   }));
   $('empty').hidden = groups.size > 0;

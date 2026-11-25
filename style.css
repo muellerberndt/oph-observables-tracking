@@ -116,3 +116,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 1px dash
   .body { padding-left: 4px; }
 }
 @media (forced-colors: active) { .bar span { border: 1px solid CanvasText; } }
+
+/* Question-mark tooltip */
+.tip { position: relative; display: inline-grid; place-items: center; width: 1.35em; height: 1.35em; margin-left: 8px; vertical-align: .05em; border: 1px solid var(--dim); border-radius: 50%; font-size: .62rem; font-weight: 400; letter-spacing: 0; color: var(--dim); text-shadow: none; cursor: help; }
+.tip:hover, .tip:focus { color: var(--glow); border-color: var(--glow); outline: none; }
+.tip:hover::after, .tip:focus::after { content: attr(data-tip); position: absolute; z-index: 5; left: 0; top: calc(100% + 8px); width: min(300px, 76vw); padding: 9px 11px; background: #000; border: 1px solid rgba(74, 241, 242, .35); box-shadow: 0 0 14px rgba(74, 241, 242, .14); color: var(--ink); font-size: .7rem; line-height: 1.55; letter-spacing: .02em; text-align: left; text-transform: none; white-space: normal; }
