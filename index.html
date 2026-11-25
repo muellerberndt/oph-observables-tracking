@@ -2,68 +2,78 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OPH observable status</title>
-<meta name="description" content="Completion ledger of Observer Patch Holography: every observable the theory must reproduce and every finite-theorem premise the executable model has to confirm, with links to papers, Lean proofs and code.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OPH observable status | Pragma Research</title>
+<meta name="description" content="Every observable Observer Patch Holography must reproduce, with its status and the Lean proofs, executable model evidence and papers behind it.">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Pragma Research">
 <meta property="og:title" content="OPH observable status">
 <meta property="og:description" content="Every observable Observer Patch Holography must reproduce, and how far the current material demonstrates it.">
-<meta property="og:type" content="website">
 <meta property="og:url" content="https://status.floatingpragma.ai/">
 <link rel="canonical" href="https://status.floatingpragma.ai/">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="page viz-root">
-  <header class="top">
-    <a class="brand" href="https://floatingpragma.ai/">Floating Pragma · OPH</a>
-    <nav>
-      <a href="https://github.com/FloatingPragma/observer-patch-holography">Repository</a>
-      <a href="https://github.com/FloatingPragma/observer-patch-holography/blob/main/model/README.md">Executable model</a>
-      <a href="https://particles.floatingpragma.ai/">Particles</a>
-      <a href="https://oph-book.floatingpragma.ai/">Book</a>
+<main class="doc">
+  <header class="doc-head">
+    <a class="mark" href="https://floatingpragma.ai/" aria-label="Pragma Research">
+      <svg class="layer r" viewBox="-1 -1 17 16" aria-hidden="true"><use href="#caret"/></svg>
+      <svg class="layer b" viewBox="-1 -1 17 16" aria-hidden="true"><use href="#caret"/></svg>
+      <svg class="layer base" viewBox="-1 -1 17 16" aria-hidden="true"><use href="#caret"/></svg>
+    </a>
+    <h1 class="word">OBSERVABLE STATUS<span class="cursor" aria-hidden="true"></span></h1>
+    <p class="tagline">observer patch holography, observable by observable</p>
+    <nav class="toc">
+      <a href="https://floatingpragma.ai/">pragma research</a>
+      <a href="https://github.com/FloatingPragma/observer-patch-holography">code</a>
+      <a href="https://github.com/FloatingPragma/observer-patch-holography/blob/main/model/README.md">model</a>
+      <a href="https://particles.floatingpragma.ai/">particles</a>
+      <a href="https://oph-book.floatingpragma.ai/">book</a>
     </nav>
   </header>
 
-  <main>
-    <h1>OPH observable status</h1>
-    <p class="lede">Every observable that Observer Patch Holography must reproduce, and every premise of its finite theorems that the executable model has to confirm. Each row links to the papers, Lean proofs and code it rests on.</p>
-    <p class="meta" id="meta">Loading the ledger…</p>
+  <section class="tally" id="tally" hidden>
+    <div class="stats" id="stats"></div>
+    <div class="bar" id="bar" role="img"></div>
+    <p class="legend" id="legend"></p>
+    <div class="blocking" id="blocking"></div>
+    <details class="rules">
+      <summary>how statuses and completion are computed</summary>
+      <dl id="rules"></dl>
+      <p>Completion averages one score per observable: demonstrated 1, partial 1/4, open 0. A conditional observable scores 1/2 plus half the mean score of the premises it waits on, so demonstrating a premise raises every observable that depends on it..</p>
+    </details>
+  </section>
 
-    <section class="summary" id="summary" hidden>
-      <div class="hero">
-        <span class="hero-value" id="hero-value"></span>
-        <span class="hero-label" id="hero-label"></span>
-      </div>
-      <div class="segbar tall" id="segbar" role="img"></div>
-      <ul class="legend" id="legend"></ul>
-      <p class="premise-line" id="premise-line"></p>
-      <details class="rules">
-        <summary>How statuses are assigned</summary>
-        <dl id="rules"></dl>
-      </details>
-    </section>
+  <nav class="switch" id="switch" hidden>
+    <button data-kind="observable" aria-pressed="true">observables <span id="n-observable"></span></button>
+    <button data-kind="premise" aria-pressed="false">premises <span id="n-premise"></span></button>
+    <input id="search" type="search" placeholder="search" aria-label="Search">
+  </nav>
 
-    <section class="controls" id="controls" hidden>
-      <div class="tabs" role="tablist">
-        <button role="tab" data-kind="observable" aria-selected="true">Observables <span class="n" id="n-observable"></span></button>
-        <button role="tab" data-kind="premise" aria-selected="false">Premises <span class="n" id="n-premise"></span></button>
-      </div>
-      <div class="filters">
-        <div class="chips" id="chips"></div>
-        <select id="category" aria-label="Category"></select>
-        <input id="search" type="search" placeholder="Search" aria-label="Search rows">
-      </div>
-    </section>
+  <div id="list"></div>
+  <p class="empty" id="empty" hidden>nothing matches</p>
 
-    <section id="list" class="list"></section>
-    <p class="empty" id="empty" hidden>No rows match.</p>
-  </main>
-
-  <footer>
-    <p>Source: <a id="source-link" href="https://github.com/FloatingPragma/observer-patch-holography/blob/main/docs/registers/OBSERVABLES.json">docs/registers/OBSERVABLES.json</a> in the OPH repository. This page reads it on every visit.</p>
+  <footer class="doc-foot">
+    <p id="meta">loading the ledger</p>
+    <p>source <a id="source" href="https://github.com/FloatingPragma/observer-patch-holography/blob/main/docs/registers/OBSERVABLES.json">docs/registers/OBSERVABLES.json</a></p>
   </footer>
-</div>
+</main>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <g id="caret" fill="currentColor" shape-rendering="crispEdges">
+      <rect x="6" y="0" width="3" height="2"/>
+      <rect x="5" y="2" width="5" height="2"/>
+      <rect x="4" y="4" width="3" height="2"/><rect x="8" y="4" width="3" height="2"/>
+      <rect x="3" y="6" width="3" height="2"/><rect x="9" y="6" width="3" height="2"/>
+      <rect x="2" y="8" width="3" height="2"/><rect x="10" y="8" width="3" height="2"/>
+      <rect x="1" y="10" width="3" height="2"/><rect x="11" y="10" width="3" height="2"/>
+      <rect x="0" y="12" width="3" height="2"/><rect x="12" y="12" width="3" height="2"/>
+    </g>
+  </defs>
+</svg>
 <script src="app.js"></script>
 </body>
 </html>

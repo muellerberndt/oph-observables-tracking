@@ -5,11 +5,13 @@ const REPO = 'FloatingPragma/observer-patch-holography';
 const PATH = 'docs/registers/OBSERVABLES.json';
 const BLOB = `https://github.com/${REPO}/blob/main/`;
 const STATUSES = ['Demonstrated', 'Conditional', 'Partial', 'Open'];
+const GLYPH = { Demonstrated: '●', Conditional: '◐', Partial: '◔', Open: '○' };
+const BASE = { Demonstrated: 1, Conditional: 0.5, Partial: 0.25, Open: 0 };
 
-const state = { kind: 'observable', statuses: new Set(STATUSES), category: '', query: '' };
+const state = { kind: 'observable', statuses: new Set(STATUSES), query: '' };
 let ROWS = [];
 let BY_ID = new Map();
-let WAITING = new Map(); // premise id -> observable rows that list it
+let WAITING = new Map(); // premise id -> observable rows that wait on it
 
 const $ = (id) => document.getElementById(id);
 function el(tag, attrs, ...children) {
@@ -23,9 +25,11 @@ function el(tag, attrs, ...children) {
   for (const c of children.flat()) if (c != null) node.append(c);
   return node;
 }
+const glyph = (s) => el('span', { class: `g ${s}`, 'aria-label': s, title: s, text: GLYPH[s] || '?' });
+const pct = (x) => `${(100 * x).toFixed(1)}%`;
 
 async function load() {
-  // Local testing: ?data=<same-origin relative path>.
+  // Local preview: ?data=<same-origin relative path>.
   const local = new URLSearchParams(location.search).get('data');
   if (local && /^[\w./-]+$/.test(local) && !local.includes('..')) {
     return { data: await (await fetch(local, { cache: 'no-store' })).json(), commit: null };
@@ -38,10 +42,31 @@ async function load() {
       if (c) commit = { sha: c.sha, date: c.commit.committer.date, url: c.html_url };
     }
   } catch (e) { /* the API is optional */ }
-  const ref = commit ? commit.sha : 'main';
-  const r = await fetch(`https://raw.githubusercontent.com/${REPO}/${ref}/${PATH}`, { cache: 'no-store' });
+  const r = await fetch(`https://raw.githubusercontent.com/${REPO}/${commit ? commit.sha : 'main'}/${PATH}`, { cache: 'no-store' });
   if (!r.ok) throw new Error(`ledger request failed (${r.status})`);
   return { data: await r.json(), commit };
+}
+
+// Rows written before the short schema carry long texts and one code list; read both forms.
+function normalize(r) {
+  const code = r.code || [];
+  const isLean = (p) => /^Lean\//.test(p) || /\.lean$/.test(p);
+  return {
+    ...r,
+    what: r.what || r.statement || r.why || '',
+    why: r.what ? (r.why || '') : '',
+    lean: r.lean || code.filter(isLean),
+    model: r.model || code.filter((p) => !isLean(p)),
+    papers: r.papers || [],
+    premises: r.premises || [],
+  };
+}
+
+function score(r) {
+  if (r.status !== 'Conditional') return BASE[r.status] ?? 0;
+  const ps = r.premises.map((p) => BY_ID.get(p)).filter(Boolean);
+  const mean = ps.length ? ps.reduce((a, p) => a + (BASE[p.status] ?? 0), 0) / ps.length : 0;
+  return 0.5 + 0.5 * mean;
 }
 
 function counts(rows) {
@@ -50,213 +75,171 @@ function counts(rows) {
   return c;
 }
 
-function segbar(rows, tall) {
+function bar(rows) {
   const c = counts(rows);
-  const total = rows.length || 1;
-  const bar = el('div', { class: `segbar ${tall ? 'tall' : 'thin'}`, role: 'img' });
-  const parts = [];
+  const node = el('div', { class: 'bar', id: 'bar', role: 'img' });
+  const label = [];
   for (const s of STATUSES) {
     if (!c[s]) continue;
-    const share = Math.round((100 * c[s]) / total);
-    parts.push(`${s} ${c[s]} (${share}%)`);
-    const seg = el('span', { class: `seg-${s}`, title: `${s}: ${c[s]} of ${rows.length} (${share}%)` });
+    label.push(`${s.toLowerCase()} ${c[s]}`);
+    const seg = el('span', { title: `${s.toLowerCase()}: ${c[s]} of ${rows.length}` });
     seg.style.flex = `${c[s]} 1 0`;
-    if (tall && c[s] / total >= 0.07) seg.textContent = `${share}%`;
-    bar.append(seg);
+    seg.style.background = `var(--s-${s})`;
+    node.append(seg);
   }
-  bar.setAttribute('aria-label', parts.join(', '));
-  return bar;
+  node.setAttribute('aria-label', label.join(', '));
+  return node;
 }
 
-function renderSummary(data) {
+function renderTally(data) {
   const obs = ROWS.filter((r) => r.kind === 'observable');
   const prem = ROWS.filter((r) => r.kind === 'premise');
   const c = counts(obs);
-  $('hero-value').textContent = `${c.Demonstrated} of ${obs.length}`;
-  $('hero-label').textContent = 'observables demonstrated';
-  $('segbar').replaceWith(Object.assign(segbar(obs, true), { id: 'segbar' }));
-  $('legend').replaceChildren(...STATUSES.map((s) =>
-    el('li', {}, el('span', { class: `dot ${s}` }), el('span', {}, el('b', { text: s }), ` ${c[s]}`))));
-  const open = prem.filter((r) => r.status !== 'Demonstrated').length;
-  $('premise-line').replaceChildren(
-    el('b', { text: String(open) }),
-    ` of ${prem.length} finite-theorem premises need confirmation by the executable model. `,
-    el('a', { href: '#', id: 'to-premises', text: 'Show premises' }));
-  $('to-premises').addEventListener('click', (e) => { e.preventDefault(); setKind('premise'); });
+  const completion = obs.reduce((a, r) => a + score(r), 0) / (obs.length || 1);
+  const stat = (v, small, l) => el('div', { class: 'stat' }, el('span', { class: 'v' }, v, small ? el('small', { text: small }) : null), el('span', { class: 'l', text: l }));
+  $('stats').replaceChildren(
+    stat(pct(completion), null, 'completion'),
+    stat(String(c.Demonstrated), `/ ${obs.length}`, 'observables demonstrated'),
+    stat(String(counts(prem).Demonstrated), `/ ${prem.length}`, 'premises demonstrated'),
+  );
+  $('bar').replaceWith(bar(obs));
+  $('legend').replaceChildren(...STATUSES.map((s) => {
+    const b = el('button', { 'aria-pressed': 'true', 'data-status': s }, glyph(s), ` ${s.toLowerCase()} `, el('b', { text: String(c[s]) }));
+    b.addEventListener('click', () => toggleStatus(s));
+    return b;
+  }));
+  const blockers = [...WAITING.entries()]
+    .map(([p, rs]) => [BY_ID.get(p), rs.filter((r) => r.status !== 'Demonstrated').length])
+    .filter(([p, n]) => p && p.status !== 'Demonstrated' && n > 0)
+    .sort((a, b) => b[1] - a[1]).slice(0, 5);
+  $('blocking').replaceChildren(...(blockers.length ? [
+    el('span', { class: 'h', text: 'premises holding up the most observables' }),
+    el('ol', {}, blockers.map(([p, n]) => el('li', {},
+      el('span', { class: 'n', text: String(n) }),
+      el('span', {}, glyph(p.status), ' ', el('a', { href: `#${p.id}`, text: p.name }))))),
+  ] : []));
   const rules = data.statuses || {};
   $('rules').replaceChildren(...STATUSES.flatMap((s) => [
-    el('dt', {}, el('span', { class: `dot ${s}` }), s),
-    el('dd', { text: rules[s] || '' }),
+    el('dt', {}, glyph(s), ` ${s.toLowerCase()}`), el('dd', { text: rules[s] || '' }),
   ]));
   $('n-observable').textContent = obs.length;
   $('n-premise').textContent = prem.length;
-  $('summary').hidden = false;
-  $('controls').hidden = false;
+  $('tally').hidden = false;
+  $('switch').hidden = false;
 }
 
-function renderChips() {
-  const rows = ROWS.filter((r) => r.kind === state.kind);
-  const c = counts(rows);
-  $('chips').replaceChildren(...STATUSES.map((s) => {
-    const b = el('button', { class: 'chip', 'aria-pressed': String(state.statuses.has(s)) },
-      el('span', { class: `dot ${s}` }), s, el('span', { class: 'n', text: String(c[s]) }));
-    b.addEventListener('click', () => {
-      if (state.statuses.has(s) && state.statuses.size === STATUSES.length) state.statuses = new Set([s]);
-      else if (state.statuses.has(s)) state.statuses.delete(s);
-      else state.statuses.add(s);
-      if (!state.statuses.size) state.statuses = new Set(STATUSES);
-      renderChips();
-      renderList();
-    });
-    return b;
-  }));
-  const cats = [...new Set(rows.map((r) => r.category))];
-  if (!cats.includes(state.category)) state.category = '';
-  $('category').replaceChildren(el('option', { value: '', text: 'All categories' }),
-    ...cats.map((cat) => el('option', { value: cat, text: cat })));
-  $('category').value = state.category;
+function toggleStatus(s) {
+  if (state.statuses.has(s) && state.statuses.size === STATUSES.length) state.statuses = new Set([s]);
+  else if (state.statuses.has(s)) state.statuses.delete(s);
+  else state.statuses.add(s);
+  if (!state.statuses.size) state.statuses = new Set(STATUSES);
+  for (const b of document.querySelectorAll('.legend button')) b.setAttribute('aria-pressed', String(state.statuses.has(b.dataset.status)));
+  renderList();
 }
 
-function link(path) {
-  if (/^https?:\/\//.test(path)) return el('a', { class: 'ref', href: path, text: path.replace(/^https?:\/\//, '') });
-  return el('a', { class: 'ref mono', href: BLOB + path, text: path });
+function fileLink(path) {
+  if (/^https?:\/\//.test(path)) return el('a', { href: path, title: path, text: path.replace(/^https?:\/\/(www\.)?/, '').slice(0, 48) });
+  let shown = path;
+  if (/\.(tex)$/.test(path)) shown = path.replace(/\.tex$/, '');
+  const base = shown.split('/').filter(Boolean).pop() || shown;
+  return el('a', { href: BLOB + path, title: path, text: base });
 }
 
-function rowRef(id) {
-  const r = BY_ID.get(id);
-  if (!r) return el('span', { class: 'ref mono', text: id });
-  return el('a', { class: 'ref', href: `#${id}` }, el('span', { class: `dot ${r.status}` }), r.name);
-}
-
-function section(title, nodes) {
-  if (!nodes || !nodes.length) return null;
-  return [el('h3', { text: title }), el('div', { class: 'refs' }, nodes)];
-}
-
-function detail(r) {
-  const d = el('div', { class: 'detail' });
-  if (r.summary) d.append(el('p', { class: 'lead', text: r.summary }));
-  if (r.kind === 'premise' && r.statement) d.append(el('p', {}, el('b', { text: 'Premise. ' }), r.statement));
-  if (r.why) d.append(el('p', { text: r.why }));
-  const kv = [];
-  if (r.value) kv.push(el('dt', { text: 'OPH' }), el('dd', { text: r.value }));
-  if (r.observed) kv.push(el('dt', { text: 'Observed' }), el('dd', { text: r.observed }));
-  if (r.premise_kind) kv.push(el('dt', { text: 'Kind' }), el('dd', { text: r.premise_kind }));
-  if (kv.length) d.append(el('dl', { class: 'kv' }, kv));
-  d.append(...(section('Waits on premises', (r.premises || []).map(rowRef)) || []));
+function refs(r) {
+  const dl = el('dl', { class: 'refs' });
+  const add = (label, nodes) => { if (nodes.length) dl.append(el('dt', { text: label }), el('dd', {}, nodes)); };
+  const waits = r.premises.map((p) => BY_ID.get(p)).filter(Boolean)
+    .map((p) => el('a', { href: `#${p.id}`, title: p.status }, `${GLYPH[p.status]} ${p.name}`));
+  add('waits on', waits);
   if (r.kind === 'premise') {
-    d.append(...(section('Observables waiting on this premise', (WAITING.get(r.id) || []).map((o) => rowRef(o.id))) || []));
-    d.append(...(section('Used by', (r.used_by || []).map((u) => (/[/.]/.test(u) && !/\s/.test(u) ? link(u) : el('span', { class: 'ref mono', text: u })))) || []));
+    add('needed by', (WAITING.get(r.id) || []).map((o) => el('a', { href: `#${o.id}`, title: o.status }, `${GLYPH[o.status]} ${o.name}`)));
   }
-  d.append(...(section('Papers', (r.papers || []).map(link)) || []));
-  d.append(...(section('Proofs and code', (r.code || []).map(link)) || []));
-  d.append(...(section('Claims', (r.claims || []).map((c) => el('span', { class: 'ref mono', text: c }))) || []));
-  const foot = [el('span', { class: 'id mono', text: r.id })];
-  if (r.tags && r.tags.length) foot.push(' · ', el('span', { class: 'tags', text: r.tags.join(', ') }));
-  d.append(el('p', {}, foot));
-  return d;
+  add('lean', r.lean.map(fileLink));
+  add('model', r.model.map(fileLink));
+  add('papers', r.papers.map(fileLink));
+  return dl;
 }
 
-function rowNode(r) {
-  const node = el('details', { class: 'row', id: r.id },
-    el('summary', {},
-      el('span', { class: 'name', text: r.name }),
-      el('span', { class: 'badge' }, el('span', { class: `dot ${r.status}` }), r.status)));
+function item(r) {
+  const node = el('details', { class: 'item', id: r.id },
+    el('summary', {}, glyph(r.status), el('span', { class: 'name', text: r.name }), el('span', { class: 'st', text: r.status.toLowerCase() })));
   node.addEventListener('toggle', () => {
-    if (node.open && !node.querySelector('.detail')) node.append(detail(r));
-  }, { once: false });
+    if (!node.open || node.querySelector('.body')) return;
+    node.append(el('div', { class: 'body' },
+      r.what ? el('p', { class: 'what', text: r.what }) : null,
+      r.why ? el('p', { class: 'why', text: r.why }) : null,
+      refs(r)));
+  });
   return node;
 }
 
 function matches(r) {
   if (r.kind !== state.kind || !state.statuses.has(r.status)) return false;
-  if (state.category && r.category !== state.category) return false;
   if (!state.query) return true;
-  const hay = [r.id, r.name, r.summary, r.why, r.statement, r.category, ...(r.tags || []), ...(r.claims || [])]
-    .join(' ').toLowerCase();
+  const hay = [r.id, r.name, r.what, r.why, r.category].join(' ').toLowerCase();
   return state.query.split(/\s+/).every((w) => hay.includes(w));
 }
 
 function renderList() {
-  const rows = ROWS.filter(matches);
   const groups = new Map();
-  for (const r of rows) {
+  for (const r of ROWS.filter(matches)) {
     if (!groups.has(r.category)) groups.set(r.category, []);
     groups.get(r.category).push(r);
   }
-  const all = ROWS.filter((r) => r.kind === state.kind);
   $('list').replaceChildren(...[...groups].map(([cat, items]) => {
-    const whole = all.filter((r) => r.category === cat);
+    const whole = ROWS.filter((r) => r.kind === state.kind && r.category === cat);
     const done = whole.filter((r) => r.status === 'Demonstrated').length;
     return el('section', { class: 'group' },
-      el('div', { class: 'group-head' },
-        el('h2', {}, cat, el('span', { class: 'n', text: `${done} of ${whole.length} demonstrated` })),
-        segbar(whole, false)),
-      items.map(rowNode));
+      el('h2', {}, cat.toUpperCase(), el('span', { class: 'n', text: `${done}/${whole.length}` })),
+      items.map(item));
   }));
-  $('empty').hidden = rows.length > 0;
+  $('empty').hidden = groups.size > 0;
 }
 
 function setKind(kind) {
   state.kind = kind;
-  for (const b of document.querySelectorAll('.tabs button')) b.setAttribute('aria-selected', String(b.dataset.kind === kind));
-  state.statuses = new Set(STATUSES);
-  renderChips();
+  for (const b of document.querySelectorAll('.switch button')) b.setAttribute('aria-pressed', String(b.dataset.kind === kind));
   renderList();
 }
 
 function openHash() {
-  const id = decodeURIComponent(location.hash.slice(1));
-  const r = BY_ID.get(id);
+  const r = BY_ID.get(decodeURIComponent(location.hash.slice(1)));
   if (!r) return;
-  if (r.kind !== state.kind || !matches(r)) {
+  if (!matches(r)) {
     state.statuses = new Set(STATUSES);
-    state.category = '';
     state.query = '';
     $('search').value = '';
+    for (const b of document.querySelectorAll('.legend button')) b.setAttribute('aria-pressed', 'true');
     setKind(r.kind);
   }
-  const node = document.getElementById(id);
-  if (node) {
-    node.open = true;
-    node.scrollIntoView({ block: 'start' });
-  }
-}
-
-function formatDate(iso) {
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  const node = document.getElementById(r.id);
+  if (node) { node.open = true; node.scrollIntoView({ block: 'start' }); }
 }
 
 async function main() {
   try {
     const { data, commit } = await load();
-    ROWS = data.rows || [];
+    ROWS = (data.rows || []).map(normalize);
     BY_ID = new Map(ROWS.map((r) => [r.id, r]));
     WAITING = new Map();
     for (const r of ROWS) {
       if (r.kind !== 'observable') continue;
-      for (const p of r.premises || []) {
+      for (const p of r.premises) {
         if (!WAITING.has(p)) WAITING.set(p, []);
         WAITING.get(p).push(r);
       }
     }
-    const meta = $('meta');
-    if (commit) {
-      meta.replaceChildren('Ledger updated ', el('a', { href: commit.url, text: formatDate(commit.date) }), '.');
-    } else {
-      meta.textContent = '';
-    }
-    renderSummary(data);
-    renderChips();
+    $('meta').replaceChildren(...(commit
+      ? ['updated ', el('a', { href: commit.url, text: new Date(commit.date).toISOString().slice(0, 10) })]
+      : ['']));
+    renderTally(data);
     renderList();
-    for (const b of document.querySelectorAll('.tabs button')) b.addEventListener('click', () => setKind(b.dataset.kind));
-    $('category').addEventListener('change', (e) => { state.category = e.target.value; renderList(); });
+    for (const b of document.querySelectorAll('.switch button')) b.addEventListener('click', () => setKind(b.dataset.kind));
     $('search').addEventListener('input', (e) => { state.query = e.target.value.trim().toLowerCase(); renderList(); });
     window.addEventListener('hashchange', openHash);
     openHash();
   } catch (e) {
-    $('meta').replaceChildren(`The ledger could not be loaded (${e.message}). It is available at `,
-      el('a', { href: BLOB + PATH, text: PATH }), '.');
+    $('meta').replaceChildren(`the ledger could not be loaded (${e.message}); read it at `, el('a', { href: BLOB + PATH, text: PATH }));
   }
 }
 
