@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OPH observable status</title>
+<meta name="description" content="Completion ledger of Observer Patch Holography: every observable the theory must reproduce and every finite-theorem premise the executable model has to confirm, with links to papers, Lean proofs and code.">
+<meta property="og:title" content="OPH observable status">
+<meta property="og:description" content="Every observable Observer Patch Holography must reproduce, and how far the current material demonstrates it.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://status.floatingpragma.ai/">
+<link rel="canonical" href="https://status.floatingpragma.ai/">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page viz-root">
+  <header class="top">
+    <a class="brand" href="https://floatingpragma.ai/">Floating Pragma · OPH</a>
+    <nav>
+      <a href="https://github.com/FloatingPragma/observer-patch-holography">Repository</a>
+      <a href="https://github.com/FloatingPragma/observer-patch-holography/blob/main/model/README.md">Executable model</a>
+      <a href="https://particles.floatingpragma.ai/">Particles</a>
+      <a href="https://oph-book.floatingpragma.ai/">Book</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1>OPH observable status</h1>
+    <p class="lede">Every observable that Observer Patch Holography must reproduce, and every premise of its finite theorems that the executable model has to confirm. Each row links to the papers, Lean proofs and code it rests on.</p>
+    <p class="meta" id="meta">Loading the ledger…</p>
+
+    <section class="summary" id="summary" hidden>
+      <div class="hero">
+        <span class="hero-value" id="hero-value"></span>
+        <span class="hero-label" id="hero-label"></span>
+      </div>
+      <div class="segbar tall" id="segbar" role="img"></div>
+      <ul class="legend" id="legend"></ul>
+      <p class="premise-line" id="premise-line"></p>
+      <details class="rules">
+        <summary>How statuses are assigned</summary>
+        <dl id="rules"></dl>
+      </details>
+    </section>
+
+    <section class="controls" id="controls" hidden>
+      <div class="tabs" role="tablist">
+        <button role="tab" data-kind="observable" aria-selected="true">Observables <span class="n" id="n-observable"></span></button>
+        <button role="tab" data-kind="premise" aria-selected="false">Premises <span class="n" id="n-premise"></span></button>
+      </div>
+      <div class="filters">
+        <div class="chips" id="chips"></div>
+        <select id="category" aria-label="Category"></select>
+        <input id="search" type="search" placeholder="Search" aria-label="Search rows">
+      </div>
+    </section>
+
+    <section id="list" class="list"></section>
+    <p class="empty" id="empty" hidden>No rows match.</p>
+  </main>
+
+  <footer>
+    <p>Source: <a id="source-link" href="https://github.com/FloatingPragma/observer-patch-holography/blob/main/docs/registers/OBSERVABLES.json">docs/registers/OBSERVABLES.json</a> in the OPH repository. This page reads it on every visit.</p>
+  </footer>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
