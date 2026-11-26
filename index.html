@@ -14,7 +14,7 @@
 <meta property="og:url" content="https://status.floatingpragma.ai/">
 <link rel="canonical" href="https://status.floatingpragma.ai/">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="style.css?v=20261126-audit">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main class="doc">
@@ -35,11 +35,6 @@
     </nav>
   </header>
 
-  <section class="source-info" aria-label="Ledger source">
-    <h2 id="source-title">Loading ledger</h2>
-    <p id="source-detail"><a href="?source=audit">26 November 2026 audit</a> · <a href="?source=public">public main ledger</a></p>
-  </section>
-
   <section class="tally" id="tally" hidden>
     <div class="stats" id="stats"></div>
     <div class="bar" id="bar" role="img"></div>
@@ -48,7 +43,7 @@
     <details class="rules">
       <summary>how statuses and completion are computed</summary>
       <dl id="rules"></dl>
-      <p>Physical target progress uses the weakest unresolved physical premise for a conditional theorem. A restricted record receives quarter credit. Predictions, comparison rows and formal identities have their own entries. Earlier ledgers lack the target classification required to compute this figure.</p>
+      <p>Completion averages one score per observable: demonstrated 1, partial 1/4, open 0. A conditional observable scores 1/2 plus half the mean score of the premises it waits on, so demonstrating a premise raises every observable that depends on it..</p>
     </details>
   </section>
 
@@ -79,6 +74,6 @@
     </g>
   </defs>
 </svg>
-<script src="app.js?v=20261126-audit"></script>
+<script src="app.js"></script>
 </body>
 </html>
