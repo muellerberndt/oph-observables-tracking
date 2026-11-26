@@ -3,7 +3,7 @@
 // The ledger lives in the OPH repository; this page reads it on every visit.
 const REPO = 'FloatingPragma/observer-patch-holography';
 const PATH = 'docs/registers/OBSERVABLES.json';
-const BLOB = `https://github.com/${REPO}/blob/main/`;
+let evidenceRevision = 'main';
 const STATUSES = ['Demonstrated', 'Conditional', 'Partial', 'Open'];
 const GLYPH = { Demonstrated: '●', Conditional: '◐', Partial: '◔', Open: '○' };
 const BASE = { Demonstrated: 1, Conditional: 0.5, Partial: 0.25, Open: 0 };
@@ -100,9 +100,9 @@ function renderTally(data) {
   const completion = obs.reduce((a, r) => a + score(r), 0) / (obs.length || 1);
   const stat = (v, small, l, help) => el('div', { class: 'stat' }, el('span', { class: 'v' }, v, small ? el('small', { text: small }) : null), el('span', { class: 'l' }, l, help ? tip(help) : null));
   $('stats').replaceChildren(
-    stat(pct(completion), null, 'completion', WEIGHTING),
+    stat(pct(completion), null, 'weighted research progress', WEIGHTING),
     stat(String(c.Demonstrated), `/ ${obs.length}`, 'observables demonstrated'),
-    stat(String(c.Demonstrated + c.Conditional), `/ ${obs.length}`, 'demonstrated or derived'),
+    stat(String(c.Demonstrated + c.Conditional), `/ ${obs.length}`, 'demonstrated or conditional'),
   );
   $('bar').replaceWith(bar(obs));
   $('legend').replaceChildren(...STATUSES.map((s) => {
@@ -144,7 +144,7 @@ function fileLink(path) {
   let shown = path;
   if (/\.(tex)$/.test(path)) shown = path.replace(/\.tex$/, '');
   const base = shown.split('/').filter(Boolean).pop() || shown;
-  return el('a', { href: BLOB + path, title: path, text: base });
+  return el('a', { href: `https://github.com/${REPO}/blob/${evidenceRevision}/${path}`, title: path, text: base });
 }
 
 function refs(r) {
@@ -221,6 +221,7 @@ function openHash() {
 async function main() {
   try {
     const { data, commit } = await load();
+    evidenceRevision = commit?.sha || 'main';
     ROWS = (data.rows || []).map(normalize);
     BY_ID = new Map(ROWS.map((r) => [r.id, r]));
     WAITING = new Map();
