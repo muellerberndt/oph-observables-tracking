@@ -21,3 +21,7 @@ the premises that hold up the most observables.
 `index.html`, `style.css` and `app.js` are the whole site, with no build step. `CNAME` binds the custom
 domain for GitHub Pages. Local preview: serve the folder (`python3 -m http.server`) and open `index.html`,
 or pass a same-origin copy of the ledger with `?data=<file>.json`.
+
+## Contact
+
+Questions, collaboration and press: [info@floatingpragma.ai](mailto:info@floatingpragma.ai).
